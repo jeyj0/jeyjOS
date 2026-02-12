@@ -1,4 +1,4 @@
-# finpilot
+# jeyjOS
 
 A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
 
@@ -78,12 +78,35 @@ Important: Change `finpilot` to your repository name in these 6 files:
 
 ### 3. Enable GitHub Actions
 
-- Go to the "Actions" tab in your repository
-- Click "I understand my workflows, go ahead and enable them"
+GitHub Actions are required to build your operating system image. Follow these steps to enable them:
 
-Your first build will start automatically! 
+1. **Navigate to Actions tab**:
+   - Go to your repository on GitHub
+   - Click the "Actions" tab at the top
+   
+2. **Enable workflows**:
+   - Click the green button "I understand my workflows, go ahead and enable them"
+   
+3. **Verify workflow enablement**:
+   - You should see several workflows listed:
+     - **Build container image** - Builds your OS image
+     - **Cleanup Old Images** - Manages image retention
+     - **Renovate** - Keeps dependencies updated
+     - **Validate-*** workflows - Pre-merge checks (shellcheck, Brewfile, Flatpak, etc.)
 
-Note: Image signing is disabled by default. Your images will build successfully without any signing keys. Once you're ready for production, see "Optional: Enable Image Signing" below.
+4. **Trigger your first build**:
+   - Your first build will start automatically on the next push to `main`
+   - Or manually trigger it: Actions tab → "Build container image" → "Run workflow"
+
+5. **Monitor the build**:
+   - Click on "Build container image" workflow
+   - Watch the build progress (typically takes 5-15 minutes)
+   - Once complete, your image will be available at: `ghcr.io/jeyj0/jeyjOS:stable`
+
+**Important Notes**:
+- Image signing is **disabled by default**. Your images will build successfully without any signing keys
+- The image will be publicly accessible at `ghcr.io/your-username/jeyjOS:stable`
+- Once ready for production, see "Optional: Enable Image Signing" section below
 
 ### 4. Customize Your Image
 
@@ -133,40 +156,303 @@ Image signing is disabled by default to let you start building immediately. Howe
 - Required for some enterprise/security-focused deployments
 - Industry best practice for production images
 
+### Prerequisites
+
+Install cosign on your local machine:
+```bash
+# On Fedora/RHEL
+sudo dnf install cosign
+
+# On Ubuntu/Debian
+sudo apt install cosign
+
+# Or using Homebrew
+brew install cosign
+
+# Or download from releases
+# https://github.com/sigstore/cosign/releases
+```
+
 ### Setup Instructions
 
-1. Generate signing keys:
+#### Step 1: Generate Signing Keys
+
+Run cosign to generate a key pair:
 ```bash
 cosign generate-key-pair
 ```
 
-This creates two files:
-- `cosign.key` (private key) - Keep this secret
-- `cosign.pub` (public key) - Commit this to your repository
+You'll be prompted for a password to protect the private key. Choose a strong password.
 
-2. Add the private key to GitHub Secrets:
-   - Copy the entire contents of `cosign.key`
-   - Go to your repository on GitHub
-   - Navigate to Settings → Secrets and variables → Actions ([GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository))
-   - Click "New repository secret"
+This creates two files:
+- `cosign.key` (private key) - **Keep this secret! Never commit to git!**
+- `cosign.pub` (public key) - This will be committed to your repository
+
+#### Step 2: Add Private Key to GitHub Secrets
+
+1. **Copy the private key contents**:
+   ```bash
+   cat cosign.key
+   ```
+   Copy the entire output (including `-----BEGIN ENCRYPTED COSIGN PRIVATE KEY-----` and `-----END ENCRYPTED COSIGN PRIVATE KEY-----`)
+
+2. **Navigate to GitHub Secrets**:
+   - Go to your repository on GitHub: https://github.com/jeyj0/jeyjOS
+   - Click "Settings" tab
+   - In the left sidebar, click "Secrets and variables" → "Actions"
+   - Click the green "New repository secret" button
+
+3. **Create the secret**:
    - Name: `SIGNING_SECRET`
-   - Value: Paste the entire contents of `cosign.key`
+   - Secret: Paste the entire contents of `cosign.key`
    - Click "Add secret"
 
-3. Replace the contents of `cosign.pub` with your public key:
-   - Open `cosign.pub` in your repository
-   - Replace the placeholder with your actual public key
-   - Commit and push the change
+4. **Verify the secret**:
+   - You should see `SIGNING_SECRET` listed in your repository secrets
+   - The value will be hidden for security
 
-4. Enable signing in the workflow:
-   - Edit `.github/workflows/build.yml`
-   - Find the "OPTIONAL: Image Signing with Cosign" section.
-   - Uncomment the steps to install Cosign and sign the image (remove the `#` from the beginning of each line in that section).
-   - Commit and push the change
+**📚 Documentation**: [GitHub Encrypted Secrets Guide](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
 
-5. Your next build will produce signed images!
+#### Step 3: Update Public Key in Repository
 
-Important: Never commit `cosign.key` to the repository. It's already in `.gitignore`.
+Replace the placeholder public key with your actual key:
+
+```bash
+# Copy your public key to the repository
+cp cosign.pub /path/to/jeyjOS/cosign.pub
+
+# Commit and push
+git add cosign.pub
+git commit -m "chore: update cosign public key"
+git push
+```
+
+#### Step 4: Enable Signing in Workflow
+
+1. **Edit the build workflow**:
+   ```bash
+   # Open in your editor
+   vim .github/workflows/build.yml
+   # Or use GitHub's web editor
+   ```
+
+2. **Find the signing section** (around line 178):
+   ```yaml
+   # OPTIONAL: Image Signing with Cosign
+   # Signing is disabled by default. To enable, see README.md
+   ```
+
+3. **Uncomment these steps** (remove the `#` at the start of each line):
+   ```yaml
+   - name: Install Cosign
+     uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+     if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+   
+   - name: Sign container image
+     if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+     run: |
+       IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
+       for tag in ${{ steps.metadata.outputs.tags }}; do
+         cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_FULL:$tag
+       done
+     env:
+       TAGS: ${{ steps.push.outputs.digest }}
+       COSIGN_EXPERIMENTAL: false
+       COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+   ```
+
+4. **Commit and push**:
+   ```bash
+   git add .github/workflows/build.yml
+   git commit -m "feat: enable image signing with cosign"
+   git push
+   ```
+
+#### Step 5: Verify Signing Works
+
+1. **Trigger a build**:
+   - Push a change to main, or
+   - Manually trigger the workflow: Actions → "Build container image" → "Run workflow"
+
+2. **Check the workflow logs**:
+   - Go to Actions tab
+   - Click on the running/completed workflow
+   - Verify the "Install Cosign" and "Sign container image" steps completed successfully
+
+3. **Verify the signature** (on your local machine or bootc system):
+   ```bash
+   # Download the public key from your repo
+   curl -sL https://raw.githubusercontent.com/jeyj0/jeyjOS/main/cosign.pub -o cosign.pub
+   
+   # Verify the image signature
+   cosign verify --key cosign.pub ghcr.io/jeyj0/jeyjOS:stable
+   ```
+   
+   You should see output like:
+   ```
+   Verification for ghcr.io/jeyj0/jeyjOS:stable --
+   The following checks were performed on each of these signatures:
+     - The cosign claims were validated
+     - The signatures were verified against the specified public key
+   ```
+
+### Troubleshooting
+
+**Error: "secret SIGNING_SECRET not found"**
+- Verify you created the secret with exact name `SIGNING_SECRET`
+- Check Settings → Secrets and variables → Actions
+
+**Error: "verification failed"**
+- Ensure `cosign.pub` in the repository matches your generated public key
+- Verify the workflow completed the signing step successfully
+
+**Error: "password required"**
+- The workflow uses the secret directly; no password prompt
+- Ensure you copied the entire contents of `cosign.key` including headers
+
+### Important Security Notes
+
+- ⚠️ **Never commit `cosign.key`** to your repository (it's already in `.gitignore`)
+- ⚠️ **Never share your private key** or the password used to encrypt it
+- ✅ **Do commit `cosign.pub`** so users can verify your images
+- ✅ **Backup your `cosign.key`** securely (password manager, encrypted storage)
+- ✅ If compromised, generate a new key pair and update GitHub secrets
+
+## Post-Setup Verification
+
+After enabling GitHub Actions and completing the initial setup, verify everything is working correctly:
+
+### 1. Check Workflow Status
+
+Visit your Actions tab: https://github.com/jeyj0/jeyjOS/actions
+
+You should see:
+- ✅ **Build container image** - Successfully completed (green checkmark)
+- ✅ **Renovate** - Running periodically to update dependencies
+- ✅ All **Validate-*** workflows ready for PRs
+
+### 2. Verify Container Image
+
+Check that your image was published to GitHub Container Registry:
+
+1. **Visit your packages**: https://github.com/jeyj0?tab=packages
+2. **Find jeyjOS package**: Should show `ghcr.io/jeyj0/jeyjOS`
+3. **Check tags**: Should include `:stable` and date-stamped tags
+
+Or check via command line:
+```bash
+# Check if image is accessible
+podman pull ghcr.io/jeyj0/jeyjOS:stable
+
+# Inspect the image
+podman inspect ghcr.io/jeyj0/jeyjOS:stable
+```
+
+### 3. Test Local Build (Optional)
+
+Test building the image locally before deploying:
+
+```bash
+# Clone your repository
+git clone https://github.com/jeyj0/jeyjOS.git
+cd jeyjOS
+
+# Build the image locally
+just build
+
+# Build a VM image for testing
+just build-qcow2
+
+# Run the VM (opens in browser)
+just run-vm-qcow2
+```
+
+### 4. Verify Renovate
+
+Check that Renovate is configured and running:
+
+1. **Check workflow runs**: Actions → Renovate (should run every 6 hours)
+2. **Look for PRs**: Renovate will create PRs for dependency updates
+3. **Verify configuration**: `.github/renovate.json5` should exist
+
+### 5. Test Validation Workflows
+
+Create a test PR to ensure validation workflows work:
+
+```bash
+# Create a test branch
+git checkout -b test-validation
+
+# Make a trivial change
+echo "# Test" >> README.md
+
+# Commit and push
+git add README.md
+git commit -m "test: verify CI validation"
+git push origin test-validation
+```
+
+Then:
+1. Open a PR on GitHub
+2. Verify these checks run automatically:
+   - ✅ Shellcheck validation
+   - ✅ Brewfile validation  
+   - ✅ Flatpak validation
+   - ✅ Justfile validation
+   - ✅ Renovate config validation
+
+### 6. Deploy and Test (Final Step)
+
+Once everything is verified, deploy to a test system:
+
+```bash
+# On a Fedora Silverblue, Bluefin, or compatible bootc system
+sudo bootc switch ghcr.io/jeyj0/jeyjOS:stable
+
+# Reboot to apply
+sudo systemctl reboot
+
+# After reboot, verify
+bootc status
+ujust --list
+```
+
+### Common Issues and Solutions
+
+**Issue: "Actions not enabled"**
+- Solution: Go to Settings → Actions → General → Enable "Allow all actions and reusable workflows"
+
+**Issue: "Package not found" when pulling image**
+- Solution: Check Settings → Actions → General → Workflow permissions → Enable "Read and write permissions"
+- Also check: Package settings → Change package visibility to "Public"
+
+**Issue: "Build fails on first run"**
+- Solution: Check Actions tab → Click failed workflow → Review error logs
+- Common fix: Ensure all workflow files are properly committed
+
+**Issue: "Image builds but can't pull"**
+- Solution: Make package public: Package settings → Change visibility → Public
+
+### Next Steps
+
+✅ **Setup Complete!** Your jeyjOS operating system is now:
+- Building automatically on every push to main
+- Publishing to GitHub Container Registry
+- Validating changes via PRs
+- Updating dependencies via Renovate
+
+**Ready to customize?**
+- Add packages to `build/10-build.sh`
+- Configure Brewfiles in `custom/brew/`
+- Set up Flatpaks in `custom/flatpaks/`
+- Create ujust shortcuts in `custom/ujust/`
+- See detailed guides in [Detailed Guides](#detailed-guides) section
+
+**Ready for production?**
+- See [Love Your Image? Let's Go to Production](#love-your-image-lets-go-to-production) section
+- Enable image signing for security
+- Enable SBOM attestation
+- Consider image rechunking for optimal updates
 
 ## Love Your Image? Let's Go to Production
 

@@ -10,6 +10,32 @@ This template uses the **multi-stage build architecture** from , combining resou
 
 > Be the one who moves, not the one who is moved.
 
+## What Makes jeyjOS Different?
+
+Here are the changes from the base Silverblue image. This image is based on [Universal Blue Silverblue](https://github.com/ublue-os/silverblue) and includes these customizations:
+
+### Base Configuration
+- **Base Image**: `ghcr.io/ublue-os/silverblue-main:latest` (Fedora with GNOME)
+- **Architecture**: Multi-stage build using OCI containers from @projectbluefin/common and @ublue-os/brew
+- **Build System**: Automated via GitHub Actions with Renovate for dependency updates
+
+### Added Packages (Build-time)
+- Currently using default build configuration
+- System packages can be added via `build/10-build.sh`
+
+### Added Applications (Runtime)
+- **CLI Tools (Homebrew)**: Configured via Brewfiles in `custom/brew/`
+- **GUI Apps (Flatpak)**: Configured via preinstall files in `custom/flatpaks/`
+
+### Configuration Changes
+- Standard Universal Blue configuration
+- ujust commands available for system management
+- Homebrew integration for CLI tools
+
+*This is a fresh bootstrap. Customize by adding packages to build scripts, Brewfiles, and Flatpak preinstall files.*
+
+*Last updated: 2026-02-12*
+
 ## Guided Copilot Mode
 
 Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.

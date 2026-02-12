@@ -1,40 +1,44 @@
-# jeyjOS
+# jeyjos
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux.
 
 This template uses the **multi-stage build architecture** from , combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
 
-**Unlike previous templates, you are not modifying Bluefin and making changes.**: You are assembling your own Bluefin in the same exact way that Bluefin, Aurora, and Bluefin LTS are built. This is way more flexible and better for everyone since the image-agnostic and desktop things we love about Bluefin lives in @projectbluefin/common. 
+**Unlike previous templates, you are not modifying Bluefin and making changes.**: You are assembling your own Bluefin in the same exact way that Bluefin, Aurora, and Bluefin LTS are built. This is way more flexible and better for everyone since the image-agnostic and desktop things we love about Bluefin lives in @projectbluefin/common.
 
- Instead, you create your own OS repository based on this template, allowing full customization while leveraging Bluefin's robust build system and shared components.
+Instead, you create your own OS repository based on this template, allowing full customization while leveraging Bluefin's robust build system and shared components.
 
 > Be the one who moves, not the one who is moved.
 
-## What Makes jeyjOS Different?
+## What Makes jeyjos Different?
 
 Here are the changes from the base Silverblue image. This image is based on [Universal Blue Silverblue](https://github.com/ublue-os/silverblue) and includes these customizations:
 
 ### Base Configuration
+
 - **Base Image**: `ghcr.io/ublue-os/silverblue-main:latest` (Fedora with GNOME)
 - **Architecture**: Multi-stage build using OCI containers from @projectbluefin/common and @ublue-os/brew
 - **Build System**: Automated via GitHub Actions with Renovate for dependency updates
 
 ### Added Packages (Build-time)
+
 - Currently using default build configuration
 - System packages can be added via `build/10-build.sh`
 
 ### Added Applications (Runtime)
+
 - **CLI Tools (Homebrew)**: Configured via Brewfiles in `custom/brew/`
 - **GUI Apps (Flatpak)**: Configured via preinstall files in `custom/flatpaks/`
 
 ### Configuration Changes
+
 - Standard Universal Blue configuration
 - ujust commands available for system management
 - Homebrew integration for CLI tools
 
-*This is a fresh bootstrap. Customize by adding packages to build scripts, Brewfiles, and Flatpak preinstall files.*
+_This is a fresh bootstrap. Customize by adding packages to build scripts, Brewfiles, and Flatpak preinstall files._
 
-*Last updated: 2026-02-12*
+_Last updated: 2026-02-12_
 
 ## Guided Copilot Mode
 
@@ -51,6 +55,7 @@ Use @projectbluefin/finpilot as a template, name the OS the repository name. Ens
 ## What's Included
 
 ### Build System
+
 - Automated builds via GitHub Actions on every commit
 - Awesome self hosted Renovate setup that keeps all your images and actions up to date.
 - Automatic cleanup of old images (90+ days) to keep it tidy
@@ -64,22 +69,26 @@ Use @projectbluefin/finpilot as a template, name the OS the repository name. Ens
   - See checklist below to enable these as they take some manual configuration
 
 ### Homebrew Integration
+
 - Pre-configured Brewfiles for easy package installation and customization
 - Includes curated collections: development tools, fonts, CLI utilities. Go nuts.
 - Users install packages at runtime with `brew bundle`, aliased to premade `ujust commands`
 - See [custom/brew/README.md](custom/brew/README.md) for details
 
 ### Flatpak Support
+
 - Ship your favorite flatpaks
 - Automatically installed on first boot after user setup
 - See [custom/flatpaks/README.md](custom/flatpaks/README.md) for details
 
 ### ujust Commands
+
 - User-friendly command shortcuts via `ujust`
 - Pre-configured examples for app installation and system maintenance for you to customize
 - See [custom/ujust/README.md](custom/ujust/README.md) for details
 
 ### Build Scripts
+
 - Modular numbered scripts (10-, 20-, 30-) run in order
 - Example scripts included for third-party repositories and desktop replacement
 - Helper functions for safe COPR usage
@@ -109,44 +118,48 @@ GitHub Actions are required to build your operating system image. Follow these s
 1. **Navigate to Actions tab**:
    - Go to your repository on GitHub
    - Click the "Actions" tab at the top
-   
 2. **Enable workflows**:
    - Click the green button "I understand my workflows, go ahead and enable them"
-   
 3. **Verify workflow enablement**:
+
    - You should see several workflows listed:
      - **Build container image** - Builds your OS image
      - **Cleanup Old Images** - Manages image retention
      - **Renovate** - Keeps dependencies updated
-     - **Validate-*** workflows - Pre-merge checks (shellcheck, Brewfile, Flatpak, etc.)
+     - **Validate-\*** workflows - Pre-merge checks (shellcheck, Brewfile, Flatpak, etc.)
 
 4. **Trigger your first build**:
+
    - Your first build will start automatically on the next push to `main`
    - Or manually trigger it: Actions tab → "Build container image" → "Run workflow"
 
 5. **Monitor the build**:
    - Click on "Build container image" workflow
    - Watch the build progress (typically takes 5-15 minutes)
-   - Once complete, your image will be available at: `ghcr.io/jeyj0/jeyjOS:stable`
+   - Once complete, your image will be available at: `ghcr.io/jeyj0/jeyjos:stable`
 
 **Important Notes**:
+
 - Image signing is **disabled by default**. Your images will build successfully without any signing keys
-- The image will be publicly accessible at `ghcr.io/your-username/jeyjOS:stable`
+- The image will be publicly accessible at `ghcr.io/your-username/jeyjos:stable`
 - Once ready for production, see "Optional: Enable Image Signing" section below
 
 ### 4. Customize Your Image
 
 Choose your base image in `Containerfile` (line 23):
+
 ```dockerfile
 FROM ghcr.io/ublue-os/bluefin:stable
 ```
 
 Add your packages in `build/10-build.sh`:
+
 ```bash
 dnf5 install -y package-name
 ```
 
 Customize your apps:
+
 - Add Brewfiles in `custom/brew/` ([guide](custom/brew/README.md))
 - Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
 - Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
@@ -156,16 +169,17 @@ Customize your apps:
 All changes should be made via pull requests:
 
 1. Open a pull request on GitHub with the change you want.
-3. The PR will automatically trigger:
+2. The PR will automatically trigger:
    - Build validation
    - Brewfile, Flatpak, Justfile, and shellcheck validation
    - Test image build
-4. Once checks pass, merge the PR
-5. Merging triggers publishes a `:stable` image
+3. Once checks pass, merge the PR
+4. Merging triggers publishes a `:stable` image
 
 ### 6. Deploy Your Image
 
 Switch to your image:
+
 ```bash
 sudo bootc switch ghcr.io/your-username/your-repo-name:stable
 sudo systemctl reboot
@@ -185,6 +199,7 @@ Image signing is disabled by default to let you start building immediately. Howe
 ### Prerequisites
 
 Install cosign on your local machine:
+
 ```bash
 # On Fedora/RHEL
 sudo dnf install cosign
@@ -204,6 +219,7 @@ brew install cosign
 #### Step 1: Generate Signing Keys
 
 Run cosign to generate a key pair:
+
 ```bash
 cosign generate-key-pair
 ```
@@ -211,24 +227,29 @@ cosign generate-key-pair
 You'll be prompted for a password to protect the private key. Choose a strong password.
 
 This creates two files:
+
 - `cosign.key` (private key) - **Keep this secret! Never commit to git!**
 - `cosign.pub` (public key) - This will be committed to your repository
 
 #### Step 2: Add Private Key to GitHub Secrets
 
 1. **Copy the private key contents**:
+
    ```bash
    cat cosign.key
    ```
+
    Copy the entire output (including `-----BEGIN ENCRYPTED COSIGN PRIVATE KEY-----` and `-----END ENCRYPTED COSIGN PRIVATE KEY-----`)
 
 2. **Navigate to GitHub Secrets**:
-   - Go to your repository on GitHub: https://github.com/jeyj0/jeyjOS
+
+   - Go to your repository on GitHub: https://github.com/jeyj0/jeyjos
    - Click "Settings" tab
    - In the left sidebar, click "Secrets and variables" → "Actions"
    - Click the green "New repository secret" button
 
 3. **Create the secret**:
+
    - Name: `SIGNING_SECRET`
    - Secret: Paste the entire contents of `cosign.key`
    - Click "Add secret"
@@ -245,7 +266,7 @@ Replace the placeholder public key with your actual key:
 
 ```bash
 # Copy your public key to the repository
-cp cosign.pub /path/to/jeyjOS/cosign.pub
+cp cosign.pub /path/to/jeyjos/cosign.pub
 
 # Commit and push
 git add cosign.pub
@@ -256,6 +277,7 @@ git push
 #### Step 4: Enable Signing in Workflow
 
 1. **Edit the build workflow**:
+
    ```bash
    # Open in your editor
    vim .github/workflows/build.yml
@@ -263,17 +285,19 @@ git push
    ```
 
 2. **Find the signing section** (around line 178):
+
    ```yaml
    # OPTIONAL: Image Signing with Cosign
    # Signing is disabled by default. To enable, see README.md
    ```
 
 3. **Uncomment these steps** (remove the `#` at the start of each line):
+
    ```yaml
    - name: Install Cosign
      uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
      if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-   
+
    - name: Sign container image
      if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
      run: |
@@ -297,26 +321,30 @@ git push
 #### Step 5: Verify Signing Works
 
 1. **Trigger a build**:
+
    - Push a change to main, or
    - Manually trigger the workflow: Actions → "Build container image" → "Run workflow"
 
 2. **Check the workflow logs**:
+
    - Go to Actions tab
    - Click on the running/completed workflow
    - Verify the "Install Cosign" and "Sign container image" steps completed successfully
 
 3. **Verify the signature** (on your local machine or bootc system):
+
    ```bash
    # Download the public key from your repo
-   curl -sL https://raw.githubusercontent.com/jeyj0/jeyjOS/main/cosign.pub -o cosign.pub
-   
+   curl -sL https://raw.githubusercontent.com/jeyj0/jeyjos/main/cosign.pub -o cosign.pub
+
    # Verify the image signature
-   cosign verify --key cosign.pub ghcr.io/jeyj0/jeyjOS:stable
+   cosign verify --key cosign.pub ghcr.io/jeyj0/jeyjos:stable
    ```
-   
+
    You should see output like:
+
    ```
-   Verification for ghcr.io/jeyj0/jeyjOS:stable --
+   Verification for ghcr.io/jeyj0/jeyjos:stable --
    The following checks were performed on each of these signatures:
      - The cosign claims were validated
      - The signatures were verified against the specified public key
@@ -325,14 +353,17 @@ git push
 ### Troubleshooting
 
 **Error: "secret SIGNING_SECRET not found"**
+
 - Verify you created the secret with exact name `SIGNING_SECRET`
 - Check Settings → Secrets and variables → Actions
 
 **Error: "verification failed"**
+
 - Ensure `cosign.pub` in the repository matches your generated public key
 - Verify the workflow completed the signing step successfully
 
 **Error: "password required"**
+
 - The workflow uses the secret directly; no password prompt
 - Ensure you copied the entire contents of `cosign.key` including headers
 
@@ -350,28 +381,30 @@ After enabling GitHub Actions and completing the initial setup, verify everythin
 
 ### 1. Check Workflow Status
 
-Visit your Actions tab: https://github.com/jeyj0/jeyjOS/actions
+Visit your Actions tab: https://github.com/jeyj0/jeyjos/actions
 
 You should see:
+
 - ✅ **Build container image** - Successfully completed (green checkmark)
 - ✅ **Renovate** - Running periodically to update dependencies
-- ✅ All **Validate-*** workflows ready for PRs
+- ✅ All **Validate-\*** workflows ready for PRs
 
 ### 2. Verify Container Image
 
 Check that your image was published to GitHub Container Registry:
 
 1. **Visit your packages**: https://github.com/jeyj0?tab=packages
-2. **Find jeyjOS package**: Should show `ghcr.io/jeyj0/jeyjOS`
+2. **Find jeyjos package**: Should show `ghcr.io/jeyj0/jeyjos`
 3. **Check tags**: Should include `:stable` and date-stamped tags
 
 Or check via command line:
+
 ```bash
 # Check if image is accessible
-podman pull ghcr.io/jeyj0/jeyjOS:stable
+podman pull ghcr.io/jeyj0/jeyjos:stable
 
 # Inspect the image
-podman inspect ghcr.io/jeyj0/jeyjOS:stable
+podman inspect ghcr.io/jeyj0/jeyjos:stable
 ```
 
 ### 3. Test Local Build (Optional)
@@ -380,8 +413,8 @@ Test building the image locally before deploying:
 
 ```bash
 # Clone your repository
-git clone https://github.com/jeyj0/jeyjOS.git
-cd jeyjOS
+git clone https://github.com/jeyj0/jeyjos.git
+cd jeyjos
 
 # Build the image locally
 just build
@@ -419,10 +452,11 @@ git push origin test-validation
 ```
 
 Then:
+
 1. Open a PR on GitHub
 2. Verify these checks run automatically:
    - ✅ Shellcheck validation
-   - ✅ Brewfile validation  
+   - ✅ Brewfile validation
    - ✅ Flatpak validation
    - ✅ Justfile validation
    - ✅ Renovate config validation
@@ -433,7 +467,7 @@ Once everything is verified, deploy to a test system:
 
 ```bash
 # On a Fedora Silverblue, Bluefin, or compatible bootc system
-sudo bootc switch ghcr.io/jeyj0/jeyjOS:stable
+sudo bootc switch ghcr.io/jeyj0/jeyjos:stable
 
 # Reboot to apply
 sudo systemctl reboot
@@ -446,28 +480,34 @@ ujust --list
 ### Common Issues and Solutions
 
 **Issue: "Actions not enabled"**
+
 - Solution: Go to Settings → Actions → General → Enable "Allow all actions and reusable workflows"
 
 **Issue: "Package not found" when pulling image**
+
 - Solution: Check Settings → Actions → General → Workflow permissions → Enable "Read and write permissions"
 - Also check: Package settings → Change package visibility to "Public"
 
 **Issue: "Build fails on first run"**
+
 - Solution: Check Actions tab → Click failed workflow → Review error logs
 - Common fix: Ensure all workflow files are properly committed
 
 **Issue: "Image builds but can't pull"**
+
 - Solution: Make package public: Package settings → Change visibility → Public
 
 ### Next Steps
 
-✅ **Setup Complete!** Your jeyjOS operating system is now:
+✅ **Setup Complete!** Your jeyjos operating system is now:
+
 - Building automatically on every push to main
 - Publishing to GitHub Container Registry
 - Validating changes via PRs
 - Updating dependencies via Renovate
 
 **Ready to customize?**
+
 - Add packages to `build/10-build.sh`
 - Configure Brewfiles in `custom/brew/`
 - Set up Flatpaks in `custom/flatpaks/`
@@ -475,6 +515,7 @@ ujust --list
 - See detailed guides in [Detailed Guides](#detailed-guides) section
 
 **Ready for production?**
+
 - See [Love Your Image? Let's Go to Production](#love-your-image-lets-go-to-production) section
 - Enable image signing for security
 - Enable SBOM attestation
@@ -487,12 +528,14 @@ Ready to take your custom OS to production? Enable these features for enhanced s
 ### Production Checklist
 
 - [ ] **Enable Image Signing** (Recommended)
+
   - Provides cryptographic verification of your images
   - Prevents tampering and ensures authenticity
   - See "Optional: Enable Image Signing" section above for setup instructions
   - Status: **Disabled by default** to allow immediate testing
 
 - [ ] **Enable SBOM Attestation** (Recommended)
+
   - Generates Software Bill of Materials for supply chain security
   - Provides transparency about what's in your image
   - Requires image signing to be enabled first
@@ -549,13 +592,14 @@ Alternative approach using a temporary tag for clarity:
       rechunk --max-layers 67 \
       "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
       "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-    
+
     # Tag the rechunked image with the original tag
     sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
     sudo podman rmi "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
 ```
 
 **Parameters:**
+
 - `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
 - The first image reference is the source (input)
 - The second image reference is the destination (output)
@@ -563,17 +607,20 @@ Alternative approach using a temporary tag for clarity:
   - You can also use different tags (e.g., `-rechunked` suffix) and then retag if preferred
 
 **References:**
+
 - [CoreOS rpm-ostree build-chunked-oci documentation](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
 - [bootc documentation](https://containers.github.io/bootc/)
 
 ### After Enabling Production Features
 
 Your workflow will:
+
 - Sign all images with your key
 - Generate and attach SBOMs
 - Provide full supply chain transparency
 
 Users can verify your images with:
+
 ```bash
 cosign verify --key cosign.pub ghcr.io/your-username/your-repo-name:stable
 ```
@@ -592,6 +639,7 @@ This template follows the **multi-stage build architecture** from @projectbluefi
 ### Multi-Stage Build Pattern
 
 **Stage 1: Context (ctx)** - Combines resources from multiple sources:
+
 - Local build scripts (`/build`)
 - Local custom files (`/custom`)
 - **@projectbluefin/common** - Desktop configuration shared with Aurora
@@ -600,6 +648,7 @@ This template follows the **multi-stage build architecture** from @projectbluefi
 - **@ublue-os/brew** - Homebrew integration
 
 **Stage 2: Base Image** - Default options:
+
 - `ghcr.io/ublue-os/silverblue-main:latest` (Fedora-based, default)
 - `quay.io/centos-bootc/centos-bootc:stream10` (CentOS-based alternative)
 
@@ -621,6 +670,7 @@ COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
 ```
 
 Your build scripts can access these files at:
+
 - `/ctx/oci/base/` - Base system configuration
 - `/ctx/oci/common/` - Shared desktop configuration
 - `/ctx/oci/branding/` - Branding assets
@@ -653,6 +703,7 @@ just run-vm-qcow2       # Test in browser-based VM
 ## Security
 
 This template provides security features for production use:
+
 - Optional SBOM generation (Software Bill of Materials) for supply chain transparency
 - Optional image signing with cosign for cryptographic verification
 - Automated security updates via Renovate

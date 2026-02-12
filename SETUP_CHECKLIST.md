@@ -1,14 +1,14 @@
-# jeyjOS Setup Checklist
+# jeyjos Setup Checklist
 
-Use this checklist to complete the setup of your jeyjOS operating system.
+Use this checklist to complete the setup of your jeyjos operating system.
 
 ## ✅ Completed (by Bootstrap)
 
 - [x] Repository created from finpilot template
-- [x] All "finpilot" references renamed to "jeyjOS"
+- [x] All "finpilot" references renamed to "jeyjos"
 - [x] GitHub Actions workflows configured and validated
 - [x] README enhanced with comprehensive setup instructions
-- [x] "What Makes jeyjOS Different?" section added
+- [x] "What Makes jeyjos Different?" section added
 - [x] Build scripts validated with shellcheck
 - [x] YAML workflows validated
 - [x] Code quality checks passed
@@ -23,7 +23,7 @@ Use this checklist to complete the setup of your jeyjOS operating system.
 
 ### 2. Verify GitHub Actions Permissions ⚡ REQUIRED
 
-- [ ] Go to: https://github.com/jeyj0/jeyjOS/settings/actions
+- [ ] Go to: https://github.com/jeyj0/jeyjos/settings/actions
 - [ ] Under "Workflow permissions":
   - [ ] Select "Read and write permissions"
   - [ ] Check "Allow GitHub Actions to create and approve pull requests"
@@ -31,7 +31,7 @@ Use this checklist to complete the setup of your jeyjOS operating system.
 
 ### 3. Monitor First Build ⚡ REQUIRED
 
-- [ ] Go to: https://github.com/jeyj0/jeyjOS/actions
+- [ ] Go to: https://github.com/jeyj0/jeyjos/actions
 - [ ] Watch the "Build container image" workflow
 - [ ] Wait for green checkmark (5-15 minutes)
 - [ ] Verify no errors in build logs
@@ -41,7 +41,7 @@ Use this checklist to complete the setup of your jeyjOS operating system.
 After first build completes:
 
 - [ ] Go to: https://github.com/jeyj0?tab=packages
-- [ ] Find the "jeyjOS" package
+- [ ] Find the "jeyjos" package
 - [ ] Click on package → Package settings
 - [ ] Change visibility → "Public"
 - [ ] Confirm the change
@@ -51,7 +51,7 @@ After first build completes:
 Test pulling the image:
 
 ```bash
-podman pull ghcr.io/jeyj0/jeyjOS:stable
+podman pull ghcr.io/jeyj0/jeyjos:stable
 ```
 
 Expected: Image downloads successfully ✅
@@ -64,7 +64,7 @@ Expected: Image downloads successfully ✅
 - [ ] Generate keys: `cosign generate-key-pair`
 - [ ] Save password securely (needed for key generation only)
 - [ ] Add `cosign.key` to GitHub Secrets as `SIGNING_SECRET`
-  - [ ] Go to: https://github.com/jeyj0/jeyjOS/settings/secrets/actions
+  - [ ] Go to: https://github.com/jeyj0/jeyjos/settings/secrets/actions
   - [ ] New repository secret
   - [ ] Name: `SIGNING_SECRET`
   - [ ] Value: entire contents of `cosign.key`
@@ -95,8 +95,8 @@ Expected: Image downloads successfully ✅
 
 ```bash
 # Clone repository
-git clone https://github.com/jeyj0/jeyjOS.git
-cd jeyjOS
+git clone https://github.com/jeyj0/jeyjos.git
+cd jeyjos
 
 # Build locally (requires podman)
 just build
@@ -114,7 +114,7 @@ just run-vm-qcow2
 
 ```bash
 # Switch to your image
-sudo bootc switch ghcr.io/jeyj0/jeyjOS:stable
+sudo bootc switch ghcr.io/jeyj0/jeyjos:stable
 
 # Reboot
 sudo systemctl reboot
@@ -129,31 +129,39 @@ ujust --list
 **Only when you want to add packages or change configuration:**
 
 #### Add System Packages (Baked into Image)
+
 Edit `build/10-build.sh`:
+
 ```bash
 dnf5 install -y vim neovim htop
 ```
 
 #### Add CLI Tools (Installed by Users)
+
 Edit `custom/brew/default.Brewfile`:
+
 ```ruby
 brew "neovim"
 brew "btop"
 ```
 
 #### Add GUI Apps (Installed on First Boot)
+
 Edit `custom/flatpaks/default.preinstall`:
+
 ```ini
 [Flatpak Preinstall com.visualstudio.code]
 Branch=stable
 ```
 
 #### Add ujust Commands
+
 Edit `custom/ujust/custom-apps.just`:
+
 ```just
 [group('Apps')]
 my-command:
-    echo "Hello from jeyjOS!"
+    echo "Hello from jeyjos!"
 ```
 
 ## 🎉 Success Criteria
@@ -161,8 +169,8 @@ my-command:
 You'll know everything is working when:
 
 - ✅ Build workflow completes successfully (green checkmark)
-- ✅ Image is available at: `ghcr.io/jeyj0/jeyjOS:stable`
-- ✅ You can pull the image: `podman pull ghcr.io/jeyj0/jeyjOS:stable`
+- ✅ Image is available at: `ghcr.io/jeyj0/jeyjos:stable`
+- ✅ You can pull the image: `podman pull ghcr.io/jeyj0/jeyjos:stable`
 - ✅ Package is public (visible at https://github.com/jeyj0?tab=packages)
 - ✅ Renovate creates PRs for updates (within 6 hours)
 
@@ -191,6 +199,6 @@ You'll know everything is working when:
 2. ✅ Enable GitHub Actions permissions (read/write)
 3. ✅ Wait for build to complete (~10 minutes)
 4. ✅ Make package public
-5. ✅ Test: `podman pull ghcr.io/jeyj0/jeyjOS:stable`
+5. ✅ Test: `podman pull ghcr.io/jeyj0/jeyjos:stable`
 
 **Done!** Your OS is now building and ready to deploy! 🚀
